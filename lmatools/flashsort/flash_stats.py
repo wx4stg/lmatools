@@ -4,9 +4,8 @@ import numpy as np
 import logging
 import re
 
-from scipy.spatial import Delaunay, ConvexHull
+from scipy.spatial import Delaunay, ConvexHull, QhullError
 from scipy.special import factorial
-from scipy.spatial.qhull import QhullError
 
 from lmatools.lasso import empirical_charge_density as cd
 
@@ -157,6 +156,10 @@ def calculate_flash_stats(flash, min_pts=2):
             # hull indexing has problems here
             logger.warning('Setting area to 0 for flash with points %s, %s' % (x, y))
             area=0.0
+        except QhullError:
+            # try again, but this time use QJx option (http://www.qhull.org/html/qh-optq.htm#QJn)
+            cvh = ConvexHull(np.vstack((x,y)).T, qhull_options='QJx')
+            area = cvh.volume
            
     if area == 0.0:
         energy_estimate = 0.
